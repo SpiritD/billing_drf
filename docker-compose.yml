@@ -26,6 +26,8 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: billing.settings
       REDIS_BROKER_URL: redis://redis:6389/0
+    volumes:
+      - ./billing:/opt/project
 
   nginx:
     image: nginx

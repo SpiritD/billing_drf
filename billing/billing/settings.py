@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,7 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-pw3zfa(_s9f#ikib%2@!p&3+gy7m^t!z%tj5yfn5#sei0(sl%g'
+# В тестовом принебрегу этим, но на проде нужно перенести в окружение и точно не хранить в репе
+SECRET_KEY = 'django-insecure-pw3zfa(_s9f#ikib%2@!p&3+gy7m^t!z%tj5yfn5#sei0(sl%g'  # noqa:S105
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -37,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'users',
+    'wallet',
 ]
 
 MIDDLEWARE = [
@@ -77,7 +82,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    },
 }
 
 
