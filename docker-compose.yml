@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:4.0-alpine
+    restart: always
+    command: --port 6389
+    volumes:
+      - redis_billing:/data
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+    ports:
+      - 5432:5432
+
+  billing_service:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    depends_on:
+      - db
+      - redis
+    environment:
+      DJANGO_SETTINGS_MODULE: billing.settings
+      REDIS_BROKER_URL: redis://redis:6389/0
+
+  nginx:
+    image: nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /var/log/nginx/:/var/log/nginx/
+    depends_on:
+      - billing_service
+
+
+volumes:
+  redis_billing:
