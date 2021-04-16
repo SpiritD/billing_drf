@@ -106,7 +106,7 @@ class User(AbstractBaseUser, PermissionsMixin):  # type: ignore
         verbose_name_plural = 'Users'
 
     def __str__(self):
-        """Repr in admin and console."""
+        """Отображение объекта в админке и консоли."""
         return self.email
 
     def get_full_name(self) -> str:
