@@ -13,15 +13,20 @@ class Transaction(models.Model):
     sender = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
+        related_name='sent_payments',
     )
     # получатель средств
     payee = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
+        related_name='received_payments',
     )
 
-    # сумма транзакции
-    amount = models.DecimalField()
+    # сумма транзакции с точностью до цента и менее 100_000_000
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+    )
 
     # для возможности анонимной отправки средств
     is_anonymous = models.BooleanField(default=False)

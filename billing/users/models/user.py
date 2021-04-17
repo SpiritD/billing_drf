@@ -27,9 +27,9 @@ class UserManager(BaseUserManager.from_queryset(UserQuerySet)):  # type: ignore 
     """Переопределение менеджера для модели User."""
 
     def get_by_natural_key(self, username):
-        """Для получения пользователя по полю KEY_FIELD модели."""
+        """Для получения пользователя по полю USERNAME_FIELD модели."""
         # Запрос не должен учитывать регистр
-        case_insensitive_username_field = f'{self.model.KEY_FIELD}__iexact'
+        case_insensitive_username_field = f'{self.model.USERNAME_FIELD}__iexact'
         user = self.filter(
             **{case_insensitive_username_field: username},
         ).first()
@@ -97,7 +97,9 @@ class User(AbstractBaseUser, PermissionsMixin):  # type: ignore
     is_staff = models.BooleanField(default=False)
 
     objects = UserManager()  # noqa: Z110
-    KEY_FIELD = 'email'  # noqa: Z115
+
+    # Поле, отвечающее за user_name, переименовывать аттрибут нельзя
+    USERNAME_FIELD = 'email'  # noqa: Z115
 
     class Meta:
         db_table = 'users'

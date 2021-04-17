@@ -27,7 +27,14 @@ services:
       DJANGO_SETTINGS_MODULE: billing.settings
       REDIS_BROKER_URL: redis://redis:6389/0
     volumes:
+      # TODO: удалить этот volume
       - ./billing:/opt/project
+
+#  adminer:
+#    image: adminer
+#    restart: always
+#    ports:
+#      - 8080:8080
 
   nginx:
     image: nginx

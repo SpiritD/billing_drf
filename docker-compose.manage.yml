@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  makemigrations:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    depends_on:
+      - db
+    command: "python manage.py makemigrations"
+    environment:
+      DJANGO_SETTINGS_MODULE: billing.settings
+    volumes:
+      - ./billing:/opt/project
+
+  migrate:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    depends_on:
+      - db
+    command: "python manage.py migrate"
+    environment:
+      DJANGO_SETTINGS_MODULE: billing.settings
+    volumes:
+      - ./billing:/opt/project
+
+
+volumes:
+  redis_billing:
