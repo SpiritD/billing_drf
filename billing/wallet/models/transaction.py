@@ -1,13 +1,7 @@
 from decimal import Decimal
 
 from django.db import models
-from django.db.models import (
-    Case,
-    DecimalField,
-    F,
-    Sum,
-    When,
-)
+from django.db.models import Sum
 
 
 class Transaction(models.Model):

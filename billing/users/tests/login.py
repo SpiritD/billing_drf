@@ -1,16 +1,21 @@
-from django.test import TestCase
+from django.test import (
+    Client,
+    TestCase,
+)
 from rest_framework import status
 
 from users.models import User
-from django.test import Client
 
 
 test_email = 'test@test.test'
-test_password = 'Secret!1'
+test_password = 'Secret!1'  # noqa: S105 для тестов можно
 
 
 class LoginTestCase(TestCase):
+    """Проверка авторизации и обновления токенов."""
+
     def setUp(self):
+        """Настройка тестов."""
         User.objects.create_user(
             email=test_email,
             password=test_password,

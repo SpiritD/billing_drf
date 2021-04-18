@@ -3,14 +3,21 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from users.models import User
-from wallet.models import Wallet, Transaction
+from wallet.models import (
+    Transaction,
+    Wallet,
+)
+
 
 test_email = 'test@test.test'
-test_password = 'Secret!1'
+test_password = 'Secret!1'  # noqa: S105 для тестов можно
 
 
 class TransactionTestCase(TestCase):
+    """Тесты на /wallet/transaction/ и модель Transaction."""
+
     def setUp(self):
+        """Настройка тестов."""
         self.user_1 = User.objects.create_user(
             email=test_email,
             password=test_password,
@@ -37,6 +44,7 @@ class TransactionTestCase(TestCase):
         return response.json()['access']
 
     def test_setup(self):
+        """Проверка, что тесты настроились верно."""
         self.assertEqual(User.objects.count(), 2)
         self.assertEqual(Wallet.objects.count(), 2)
 
@@ -51,7 +59,7 @@ class TransactionTestCase(TestCase):
             HTTP_AUTHORIZATION='Bearer ' + access_token,
         )
 
-        # неверная сумма
+        # неверная сумма и другие значения
         response = client.post(
             path='/wallet/transaction/',
             data={
@@ -227,3 +235,49 @@ class TransactionTestCase(TestCase):
         )
         self.assertEqual(response.json(), {'error': 'wallet not found'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_not_found_destination_wallet(self):
+        """Проверяем доступность кошелька пополнения."""
+        client = APIClient()
+        access_token = self._get_access_token(client=client)
+        client.credentials(
+            HTTP_AUTHORIZATION='Bearer ' + access_token,
+        )
+
+        Transaction.objects.create(
+            payee_id=self.wallet_1.pk,
+            amount=1_000_000,
+        )
+        Wallet.objects.filter(
+            pk=self.wallet_1.pk,
+        ).update(
+            balance=Transaction.get_wallet_transactions_sum(
+                wallet_id=self.wallet_1.pk,
+            ),
+        )
+        self.assertEqual(
+            Wallet.objects.get(
+                pk=self.wallet_1.pk,
+            ).balance,
+            1_000_000,
+        )
+
+        # отправляем на несуществующий кошелёк
+        response = client.post(
+            path='/wallet/transaction/',
+            data={
+                'sender': self.wallet_1.pk,
+                'payee': self.wallet_2.pk + 1,
+                'amount': 1_000,
+            },
+        )
+        self.assertIn('payee', response.json())
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # проверяем, что деньги не ушли
+        self.assertEqual(
+            Wallet.objects.get(
+                pk=self.wallet_1.pk,
+            ).balance,
+            1_000_000,
+        )

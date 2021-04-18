@@ -1,11 +1,14 @@
-from django.test import TestCase
+from django.test import (
+    Client,
+    TestCase,
+)
 from rest_framework import status
 
 from users.models import User
-from django.test import Client
 
 
 class RegisterTestCase(TestCase):
+    """Проверка создания пользователя."""
 
     def test_bad_request(self):
         """Проверка валидации."""
@@ -55,7 +58,7 @@ class RegisterTestCase(TestCase):
         """Проверка регистрации пользователя."""
         client = Client()
         test_email = 'test@test.test'
-        test_password = 'Secret!1'
+        test_password = 'Secret!1'  # noqa: S105 для тестов можно
 
         response = client.post(
             path='/auth/register/',
@@ -79,7 +82,7 @@ class RegisterTestCase(TestCase):
         """Проверка регистрации пользователя с необязательными полями."""
         client = Client()
         test_email = 'test@test.test'
-        test_password = 'Secret!1'
+        test_password = 'Secret!1'  # noqa: S105 для тестов можно
         # это не копипаст откуда-то, я люблю стар трек
         test_first_name = 'Scott'
         test_last_name = 'Montgomery'
