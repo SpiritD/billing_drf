@@ -33,22 +33,22 @@ class CreateDepositView(ViewSetMixin, generics.CreateAPIView):
 
         payee_id = serializer.data['payee']
         amount = serializer.data['amount']
-        is_anonymous = serializer.data['is_anonymous']
-        comment = serializer.data['comment']
+        is_anonymous = serializer.data.get('is_anonymous', False)
+        comment = serializer.data.get('comment', '')
 
         # при сохранении транзакции обновляем баланс кошелька
         with transaction.atomic():
             # создаём новую транзакцию
             Transaction.objects.create(
                 sender=None,
-                payee=payee_id,
+                payee_id=payee_id,
                 amount=amount,
                 is_anonymous=is_anonymous,
                 comment=comment,
             )
             # обновляем баланс получателя транзакции
             Wallet.objects.filter(
-                user_id=payee_id,
+                pk=payee_id,
             ).update(
                 balance=Transaction.get_wallet_transactions_sum(
                     wallet_id=payee_id,

@@ -35,8 +35,8 @@ class CreateTransactionView(ViewSetMixin, generics.CreateAPIView):
         sender_id = serializer.data['sender']
         payee_id = serializer.data['payee']
         amount = serializer.data['amount']
-        is_anonymous = serializer.data['is_anonymous']
-        comment = serializer.data['comment']
+        is_anonymous = serializer.data.get('is_anonymous', False)
+        comment = serializer.data.get('comment', '')
 
         redis_client = get_redis()
         unique_value = generate_unique_value()
@@ -52,10 +52,18 @@ class CreateTransactionView(ViewSetMixin, generics.CreateAPIView):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        # проверяем достаточно ли средств на кошельке
-        sender_wallet: Wallet = Wallet.objects.get(
-            user_id=sender_id,
-        )
+        # проверяем достаточно ли средств на кошельке и что кошелёк принадлежит пользователю
+        try:
+            sender_wallet: Wallet = Wallet.objects.get(
+                pk=sender_id,
+                user=request.user,
+            )
+        except Wallet.DoesNotExist:
+            return Response(
+                {'error': 'wallet not found'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if sender_wallet.balance < amount:
             remove_lock_for_transaction(
                 redis_client=redis_client,
@@ -72,15 +80,15 @@ class CreateTransactionView(ViewSetMixin, generics.CreateAPIView):
         with transaction.atomic():
             # создаём новую транзакцию
             Transaction.objects.create(
-                sender=sender_id,
-                payee=payee_id,
+                sender_id=sender_id,
+                payee_id=payee_id,
                 amount=amount,
                 is_anonymous=is_anonymous,
                 comment=comment,
             )
             # обновляем баланс отправителя транзакции
             Wallet.objects.filter(
-                user_id=sender_id,
+                pk=sender_id,
             ).update(
                 balance=Transaction.get_wallet_transactions_sum(
                     wallet_id=sender_id,
@@ -88,7 +96,7 @@ class CreateTransactionView(ViewSetMixin, generics.CreateAPIView):
             )
             # обновляем баланс получателя транзакции
             Wallet.objects.filter(
-                user_id=payee_id,
+                pk=payee_id,
             ).update(
                 balance=Transaction.get_wallet_transactions_sum(
                     wallet_id=payee_id,

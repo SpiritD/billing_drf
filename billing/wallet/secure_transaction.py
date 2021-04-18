@@ -15,7 +15,7 @@ def get_redis() -> Redis:
     """Получаем объект редиса с конфигурациями из окружения."""
     return StrictRedis(
         host=os.getenv('REDIS_HOST'),
-        port=os.getenv('REDIS_PORT'),
+        port=os.getenv('REDIS_PORT', 6389),
         decode_responses=True,
     )
 

@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_yasg',
 
+    'rest_framework',
+
     'users',
     'wallet',
 ]
@@ -112,6 +114,17 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
 # Настройка для токенов авторизации
 # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/settings.html
 # Здесь переопределяем только обновление refresh токена, иначе он будет использоваться
@@ -151,3 +164,6 @@ STATIC_ROOT = BASE_DIR / 'static'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+NOSE_ARGS = ['--nocapture',
+             '--nologcapture',]
