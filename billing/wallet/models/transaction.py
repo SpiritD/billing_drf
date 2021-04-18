@@ -1,9 +1,13 @@
 from decimal import Decimal
 
 from django.db import models
-from django.db.models import Sum
-
-from users.models import User
+from django.db.models import (
+    Case,
+    DecimalField,
+    F,
+    Sum,
+    When,
+)
 
 
 class Transaction(models.Model):
@@ -11,13 +15,13 @@ class Transaction(models.Model):
 
     # отправитель транзакции
     sender = models.ForeignKey(
-        User,
+        'Wallet',
         on_delete=models.PROTECT,
         related_name='sent_payments',
     )
     # получатель средств
     payee = models.ForeignKey(
-        User,
+        'Wallet',
         on_delete=models.PROTECT,
         related_name='received_payments',
     )
@@ -29,7 +33,9 @@ class Transaction(models.Model):
     )
 
     # для возможности анонимной отправки средств
-    is_anonymous = models.BooleanField(default=False)
+    is_anonymous = models.BooleanField(
+        default=False,
+    )
     comment = models.CharField(
         max_length=100,
         default='',
@@ -50,15 +56,32 @@ class Transaction(models.Model):
         return f'{self.sender} => {self.payee}: {self.amount}'
 
     @classmethod
-    def get_user_transactions_sum(cls, user_id: int) -> Decimal:
+    def get_wallet_transactions_sum(cls, wallet_id: int) -> Decimal:
         """
-        Возвращает сумму всех транзакций пользователя.
+        Возвращает сумму всех транзакций на кошельке.
 
-        :param user_id: id пользователя
+        :param wallet_id: id кошелька
         :return: сумма всех транзакций (актуальный баланс пользователя)
         """
-        return cls.objects.filter(
-            user_id=user_id,
-        ).aggregate(
-            total=Sum('amount'),
-        )['total']
+        # из суммы транзакций, где кошелёк указан как получатель (payee) вычитаем
+        # сумму транзакций, где этот же кошелёк указан как отправитель (sender)
+        queryset = cls.objects.annotate(
+            input_sum=Sum(
+                Case(
+                    When(payee_id=wallet_id, then=F('amount')),
+                    output_field=DecimalField(),
+                    default=0,
+                ),
+            ),
+            output_sum=Sum(
+                Case(
+                    When(sender_id=wallet_id, then=F('amount')),
+                    output_field=DecimalField(),
+                    default=0,
+                ),
+            ),
+        )
+        queryset = queryset.annotate(
+            balance_stock=F('input_sum') - F('output_sum'),
+        )
+        return queryset['balance_stock']

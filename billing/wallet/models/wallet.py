@@ -44,8 +44,8 @@ class Wallet(models.Model):
                                из суммы всех транзакций.
         :return: разница между балансом в кошельке и суммой транзакций. Если 0 - суммы совпадают.
         """
-        transaction_balance = Transaction.get_user_transactions_sum(
-            user_id=self.user_id,
+        transaction_balance = Transaction.get_wallet_transactions_sum(
+            wallet_id=self.pk,
         )
         diff_amount = self.balance - transaction_balance
         if diff_amount and update_balance:

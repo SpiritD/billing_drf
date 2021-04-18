@@ -6,6 +6,7 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     @classmethod
     def get_token(cls, user):
+        """Переопределение полями."""
         token = super().get_token(user)
 
         # добавляем кастомные поля

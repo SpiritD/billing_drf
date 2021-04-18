@@ -1,11 +1,13 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from django.contrib.auth.password_validation import validate_password
 
 from users.models import User
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания нового пользователя."""
+
     email = serializers.EmailField(
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())],
@@ -30,19 +32,26 @@ class RegisterSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, attrs):
+        """Проверка параметров, например, паролей на совпадение."""
         if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+            raise serializers.ValidationError({'password': "Password fields didn't match."})
 
         return attrs
 
     def create(self, validated_data):
+        """
+        Создание пользователя.
+
+        Создаёт пользователя и кошелёк.
+        """
         user = User.objects.create(
             email=validated_data['email'],
             first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
+            last_name=validated_data['last_name'],
         )
 
         user.set_password(validated_data['password'])
         user.save()
 
+        # TODO: добавить создание кошелька при создании пользователя
         return user

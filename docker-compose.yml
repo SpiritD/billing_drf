@@ -17,6 +17,8 @@ services:
       - 5432:5432
 
   billing_service:
+    container_name: billing_service
+    image: billing_service:last
     build:
       context: .
       dockerfile: ./Dockerfile

@@ -2,9 +2,7 @@ version: '3'
 
 services:
   makemigrations:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+    image: billing_service:last
     depends_on:
       - db
     command: "python manage.py makemigrations"
@@ -14,9 +12,7 @@ services:
       - ./billing:/opt/project
 
   migrate:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+    image: billing_service:last
     depends_on:
       - db
     command: "python manage.py migrate"

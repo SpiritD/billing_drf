@@ -1,8 +1,8 @@
 from django.urls import path
 
-from wallet import views
+from wallet.views import CreateTransactionView
 
 
 urlpatterns = [
-    # path('', views.index, name='index'),
+    path('transaction/', CreateTransactionView.as_view({'post': 'create'})),
 ]
