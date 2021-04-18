@@ -95,6 +95,7 @@ class CreateTransactionView(ViewSetMixin, generics.CreateAPIView):
                 ),
             )
 
+        # снимаем блокировку с кошелька
         remove_lock_for_transaction(
             redis_client=redis_client,
             wallet_id=sender_id,

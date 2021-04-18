@@ -1,4 +1,4 @@
-from wallet.serializers.make_transaction import CreateTransactionSerializer
+from wallet.serializers.transaction import CreateTransactionSerializer
 
 
 __all__ = [

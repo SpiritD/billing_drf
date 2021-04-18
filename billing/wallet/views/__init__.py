@@ -1,4 +1,4 @@
-from wallet.views.make_transaction import CreateTransactionView
+from wallet.views.transaction import CreateTransactionView
 
 
 __all__ = [

@@ -8,10 +8,7 @@ from redis import (
     StrictRedis,
 )
 
-
-# Если нам не удастся обработать запрос, то блокировка будет снята автоматически,
-# иначе при единичном сбое может блокировать клиентов
-MAX_LOCK_SECONDS = 10
+from wallet.constants import MAX_WALLET_LOCK_SECONDS
 
 
 def get_redis() -> Redis:
@@ -75,7 +72,7 @@ def set_lock_for_transaction(redis_client: Redis,
     redis_client.set(
         name=full_key,
         value=unique_value,
-        ex=MAX_LOCK_SECONDS,
+        ex=MAX_WALLET_LOCK_SECONDS,
     )
 
     # обязательно проверяем, что именно нами было установлено это значение

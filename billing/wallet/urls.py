@@ -5,4 +5,5 @@ from wallet.views import CreateTransactionView
 
 urlpatterns = [
     path('transaction/', CreateTransactionView.as_view({'post': 'create'})),
+    path('deposit/', CreateTransactionView.as_view({'post': 'create'})),
 ]

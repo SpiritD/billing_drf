@@ -1,13 +1,14 @@
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
+from wallet.constants import MIN_TRANSACTION_AMOUNT
 from wallet.models import Transaction
 
 
 class CreateTransactionSerializer(ModelSerializer):
     """Сериализатор для транзакции между двумя кошельками."""
 
-    amount = serializers.IntegerField(min_value=0.01)
+    amount = serializers.IntegerField(min_value=MIN_TRANSACTION_AMOUNT)
 
     class Meta:
         model = Transaction
