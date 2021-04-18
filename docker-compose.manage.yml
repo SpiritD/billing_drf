@@ -18,8 +18,17 @@ services:
     command: "python manage.py migrate"
     environment:
       DJANGO_SETTINGS_MODULE: billing.settings
-    volumes:
-      - ./billing:/opt/project
+
+  test:
+    image: billing_service:last
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    depends_on:
+      - db
+    command: "python manage.py test"
+    environment:
+      DJANGO_SETTINGS_MODULE: billing.settings
 
 
 volumes:

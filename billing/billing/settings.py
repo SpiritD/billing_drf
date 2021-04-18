@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
+from datetime import timedelta
 from pathlib import Path
 
 
@@ -111,6 +112,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Настройка для токенов авторизации
+# https://django-rest-framework-simplejwt.readthedocs.io/en/latest/settings.html
+# Здесь переопределяем только обновление refresh токена, иначе он будет использоваться
+# один всё время и время жизни наших токенов - здесь уже индивидуально.
+SIMPLE_JWT = {
+    'ROTATE_REFRESH_TOKENS': True,
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=10),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
