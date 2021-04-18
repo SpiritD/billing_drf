@@ -1,3 +1,5 @@
+import uuid
+
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -267,7 +269,7 @@ class TransactionTestCase(TestCase):
             path='/wallet/transaction/',
             data={
                 'sender': self.wallet_1.pk,
-                'payee': self.wallet_2.pk + 1,
+                'payee': uuid.uuid4(),
                 'amount': 1_000,
             },
         )
