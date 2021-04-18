@@ -27,9 +27,6 @@ services:
       DJANGO_SETTINGS_MODULE: billing.settings
       REDIS_HOST: redis
       REDIS_PORT: 6389
-    volumes:
-      # TODO: удалить этот volume
-      - ./billing:/opt/project
 
   nginx:
     image: nginx
