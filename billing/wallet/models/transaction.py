@@ -14,10 +14,13 @@ class Transaction(models.Model):
     """Транзакции между пользователями."""
 
     # отправитель транзакции
+    # при пополнении кошелька отправитель будет пустым
     sender = models.ForeignKey(
         'Wallet',
         on_delete=models.PROTECT,
         related_name='sent_payments',
+        blank=True,
+        null=True,
     )
     # получатель средств
     payee = models.ForeignKey(

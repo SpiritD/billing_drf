@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from users.models import User
+from wallet.models import Wallet
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -53,5 +54,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
 
-        # TODO: добавить создание кошелька при создании пользователя
+        Wallet.objects.create(
+            user=user,
+        )
         return user

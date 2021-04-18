@@ -27,7 +27,8 @@ services:
       - redis
     environment:
       DJANGO_SETTINGS_MODULE: billing.settings
-      REDIS_BROKER_URL: redis://redis:6389/0
+      REDIS_HOST: redis
+      REDIS_PORT: 6389
     volumes:
       # TODO: удалить этот volume
       - ./billing:/opt/project
