@@ -8,7 +8,11 @@ from django.db.models import Sum
 class Transaction(models.Model):
     """Транзакции между пользователями."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(  # noqa:VNE003
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
     # отправитель транзакции
     # при пополнении кошелька отправитель будет пустым
     sender = models.ForeignKey(
