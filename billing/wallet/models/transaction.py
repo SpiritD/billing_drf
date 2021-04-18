@@ -2,7 +2,13 @@ import uuid
 from decimal import Decimal
 
 from django.db import models
-from django.db.models import Sum
+from django.db.models import (
+    Case,
+    DecimalField,
+    F,
+    Sum,
+    When,
+)
 
 
 class Transaction(models.Model):
@@ -68,13 +74,29 @@ class Transaction(models.Model):
         """
         # из суммы транзакций, где кошелёк указан как получатель (payee) вычитаем
         # сумму транзакций, где этот же кошелёк указан как отправитель (sender)
-        # TODO: Переписать на один запрос к бд
-        input_sum = cls.objects.filter(
-            payee_id=wallet_id,
-        ).aggregate(input_sum=Sum('amount'))['input_sum'] or 0
+        return cls.objects.aggregate(
+            total=Sum(
+                Case(
+                    When(payee_id=wallet_id, then=F('amount')),
+                    default=0,
+                    output_field=DecimalField(),
+                ),
+            ) - Sum(
+                Case(
+                    When(sender_id=wallet_id, then=F('amount')),
+                    default=0,
+                    output_field=DecimalField(),
+                ),
+            ),
+        )['total'] or 0
 
-        output_sum = cls.objects.filter(
-            sender_id=wallet_id,
-        ).aggregate(output_sum=Sum('amount'))['output_sum'] or 0
-
-        return input_sum - output_sum
+        # данный запрос эквивалентен коду
+        # input_sum = cls.objects.filter(
+        #     payee_id=wallet_id,
+        # ).aggregate(input_sum=Sum('amount'))['input_sum'] or 0
+        #
+        # output_sum = cls.objects.filter(
+        #     sender_id=wallet_id,
+        # ).aggregate(output_sum=Sum('amount'))['output_sum'] or 0
+        #
+        # return input_sum - output_sum
