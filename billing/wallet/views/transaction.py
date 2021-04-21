@@ -1,4 +1,6 @@
+import redis_lock
 from django.db import transaction
+from django.db.models import F
 from rest_framework import (
     generics,
     status,
@@ -12,10 +14,8 @@ from wallet.models import (
     Wallet,
 )
 from wallet.secure_transaction import (
-    generate_unique_value,
+    get_full_key,
     get_redis,
-    remove_lock_for_transaction,
-    set_lock_for_transaction,
 )
 from wallet.serializers import CreateTransactionSerializer
 
@@ -32,83 +32,58 @@ class CreateTransactionView(ViewSetMixin, generics.CreateAPIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        sender_id = serializer.data['sender']
-        payee_id = serializer.data['payee']
-        amount = serializer.data['amount']
-        is_anonymous = serializer.data.get('is_anonymous', False)
-        comment = serializer.data.get('comment', '')
+        sender = serializer.validated_data['sender']
+        payee = serializer.validated_data['payee']
+        amount = serializer.validated_data['amount']
+        is_anonymous = serializer.validated_data.get('is_anonymous', False)
+        comment = serializer.validated_data.get('comment', '')
 
         redis_client = get_redis()
-        unique_value = generate_unique_value()
 
-        # чтобы не плодить if сразу вернём ошибку, если не смогли поставить блокировку
-        if not set_lock_for_transaction(
-            redis_client=redis_client,
-            wallet_id=sender_id,
-            unique_value=unique_value,
-        ):
-            return Response(
-                {},
-                status=status.HTTP_429_TOO_MANY_REQUESTS,
-            )
+        with redis_lock.Lock(redis_client, get_full_key(wallet_id=sender.pk)):
+            # проверяем достаточно ли средств на кошельке и что кошелёк принадлежит пользователю
+            try:
+                sender_wallet: Wallet = Wallet.objects.get(
+                    pk=sender.pk,
+                    user=request.user,
+                )
+            except Wallet.DoesNotExist:
+                return Response(
+                    {'error': 'wallet not found'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        # проверяем достаточно ли средств на кошельке и что кошелёк принадлежит пользователю
-        try:
-            sender_wallet: Wallet = Wallet.objects.get(
-                pk=sender_id,
-                user=request.user,
-            )
-        except Wallet.DoesNotExist:
-            return Response(
-                {'error': 'wallet not found'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            if sender_wallet.balance < amount:
+                # ошибка о нехвате средств
+                return Response(
+                    {'error': 'insufficient funds'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        if sender_wallet.balance < amount:
-            remove_lock_for_transaction(
-                redis_client=redis_client,
-                wallet_id=sender_id,
-                unique_value=unique_value,
-            )
-            # ошибка о нехвате средств
-            return Response(
-                {'error': 'insufficient funds'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # при сохранении транзакции обновляем балансы кошельков
-        with transaction.atomic():
-            # создаём новую транзакцию
-            Transaction.objects.create(
-                sender_id=sender_id,
-                payee_id=payee_id,
-                amount=amount,
-                is_anonymous=is_anonymous,
-                comment=comment,
-            )
-            # обновляем баланс отправителя транзакции
-            Wallet.objects.filter(
-                pk=sender_id,
-            ).update(
-                balance=Transaction.get_wallet_transactions_sum(
-                    wallet_id=sender_id,
-                ),
-            )
-            # обновляем баланс получателя транзакции
-            Wallet.objects.filter(
-                pk=payee_id,
-            ).update(
-                balance=Transaction.get_wallet_transactions_sum(
-                    wallet_id=payee_id,
-                ),
-            )
-
-        # снимаем блокировку с кошелька
-        remove_lock_for_transaction(
-            redis_client=redis_client,
-            wallet_id=sender_id,
-            unique_value=unique_value,
-        )
+            # при сохранении транзакции обновляем балансы кошельков
+            # делаем это внутри лока, чтобы с кошелька отправителя не произошло второй транзакции
+            # до обновления баланса
+            with transaction.atomic():
+                # создаём новую транзакцию
+                Transaction.objects.create(
+                    sender_id=sender.pk,
+                    payee_id=payee.pk,
+                    amount=amount,
+                    is_anonymous=is_anonymous,
+                    comment=comment,
+                )
+                # обновляем баланс отправителя транзакции
+                Wallet.objects.filter(
+                    pk=sender.pk,
+                ).update(
+                    balance=F('balance') - amount,
+                )
+                # обновляем баланс получателя транзакции
+                Wallet.objects.filter(
+                    pk=payee.pk,
+                ).update(
+                    balance=F('balance') + amount,
+                )
 
         return Response(
             {},

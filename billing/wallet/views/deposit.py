@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import F
 from rest_framework import (
     generics,
     status,
@@ -31,28 +32,26 @@ class CreateDepositView(ViewSetMixin, generics.CreateAPIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        payee_id = serializer.data['payee']
-        amount = serializer.data['amount']
-        is_anonymous = serializer.data.get('is_anonymous', False)
-        comment = serializer.data.get('comment', '')
+        payee = serializer.validated_data['payee']
+        amount = serializer.validated_data['amount']
+        is_anonymous = serializer.validated_data.get('is_anonymous', False)
+        comment = serializer.validated_data.get('comment', '')
 
         # при сохранении транзакции обновляем баланс кошелька
         with transaction.atomic():
             # создаём новую транзакцию
             Transaction.objects.create(
                 sender=None,
-                payee_id=payee_id,
+                payee_id=payee.pk,
                 amount=amount,
                 is_anonymous=is_anonymous,
                 comment=comment,
             )
             # обновляем баланс получателя транзакции
             Wallet.objects.filter(
-                pk=payee_id,
+                pk=payee.pk,
             ).update(
-                balance=Transaction.get_wallet_transactions_sum(
-                    wallet_id=payee_id,
-                ),
+                balance=F('balance') + amount,
             )
 
         return Response(
