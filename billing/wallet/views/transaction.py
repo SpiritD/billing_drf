@@ -40,6 +40,7 @@ class CreateTransactionView(ViewSetMixin, generics.CreateAPIView):
 
         redis_client = get_redis()
 
+        # Для невозможности двух параллельных транзакций на списывание средств с кошелька
         with redis_lock.Lock(redis_client, get_full_key(wallet_id=sender.pk)):
             # проверяем достаточно ли средств на кошельке и что кошелёк принадлежит пользователю
             try:
